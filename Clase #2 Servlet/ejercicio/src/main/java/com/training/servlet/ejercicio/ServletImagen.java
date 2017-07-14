@@ -8,10 +8,14 @@ package com.training.servlet.ejercicio;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import javax.inject.Inject;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import managedbeans.ControlImagen;
+import managedbeans.ServicioStreams;
 
 /**
  *
@@ -19,33 +23,35 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebServlet(name = "ServletImagen", urlPatterns = {"/imagen"})
 public class ServletImagen extends HttpServlet {
-    
+    @Inject
+    private ControlImagen ci;
+     @Inject
+    private ServicioStreams ss;
+     
     public void doGet(HttpServletRequest rq,HttpServletResponse re ) throws IOException{
-        re.setContentType("image/png");
         Object parametro = rq.getParameter("imagenId");
-        String imageName = "";
+        
         int indice = parametro == null?-1: Integer.parseInt(parametro.toString());
-        
-        switch (indice){
-            case 1:
-                imageName = "/imagenes/imagen.png";
-                break;
-            case 2:
-                imageName = "/imagenes/imagen2.png";
-                break;
-           default: 
+               
+        InputStream is = ci.obtenerImagen(indice);       
+        if(is==null){
                re.setContentType("text/html");
-               re.setStatus(404);
-               return;
+        try (PrintWriter out = re.getWriter()) {
+            /* TODO output your page here. You may use following sample code. */
+                        out.println("<!DOCTYPE html>");
+            out.println("<html>");
+            out.println("<head>");
+            out.println("<title></title>");            
+            out.println("</head>");
+            out.println("<body>");
+             out.println("<h1>Ejercicio de Prueba</h1>");
+            out.println(" <h1><FONT COLOR='red'>Se han cargado "+ss.getContador()+"</FONT></h1>");                
+            out.println("</body>");
+            out.println("</html>");
         }
-        
-                        InputStream is = this.getClass().getResourceAsStream(imageName);
-                OutputStream os = re.getOutputStream();
-                byte[] buffer = new byte[1024];
-                int len;
-                while((len = is.read(buffer)) != -1){
-                    os.write(buffer,0,len);
-                }
-                
+        }else{
+            ss.copiarInputStreamOutStream(is, re.getOutputStream());
+              re.setContentType("image/png");              
+        }
     }
 }
